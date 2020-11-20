@@ -6,10 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.example.surveillance.data.LicensePlate
 import com.example.surveillance.R
+import com.example.surveillance.data.LicensePlate
 import com.example.surveillance.utils.MockData
 import kotlinx.android.synthetic.main.fragment_license_plate.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 private const val TAG = "SURVEILANCE_MAIN"
 
@@ -21,6 +22,9 @@ class LicensePlateFragment : Fragment() {
     private val licensePlateAdapter: LicensePlateAdapter by lazy {
         LicensePlateAdapter()
     }
+    private val licensePlateViewModel: LicensePlateViewModel by viewModel()
+
+
     private lateinit var code: String
     private val regex = Regex("^[A-Z]{2}-[0-9]{3,4}-[A-Z]{1,2}\$")
 
@@ -35,6 +39,9 @@ class LicensePlateFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
+    }
+
+    private fun bind() {
     }
 
     private fun setupUI() {
