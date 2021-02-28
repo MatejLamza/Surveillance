@@ -5,40 +5,34 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.surveillance.data.CityCode
-import com.example.surveillance.data.Plate
+import com.example.surveillance.data.remote.response.PlateAPIItem
 import com.example.surveillance.data.repository.LicensePlateRepository
-import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class LicensePlateViewModel(private val licensePlateRepository: LicensePlateRepository) :
     ViewModel() {
 
-    private var _cityCodes = MutableLiveData<List<CityCode>>()
-    val cityCodes: LiveData<List<CityCode>> = _cityCodes
 
-    private val _currentPlate = MutableLiveData<Plate>()
-    val currentPlate: LiveData<Plate> = _currentPlate
+    private val _currentPlate = MutableLiveData<PlateAPIItem>()
+    val currentPlate: LiveData<PlateAPIItem> = _currentPlate
 
-
-    init {
+    fun pingAPIwithGivenPlates(plates: String) {
         viewModelScope.launch {
-            try {
-                _cityCodes.value = licensePlateRepository.getAllCityCodes()
-            } catch (e: Exception) {
-                Log.d("bbb", "error: ${e.message}")
-            }
-        }
-    }
-
-    fun testAPICall(plate: String) {
-        viewModelScope.launch {
-            Log.d("bbb", "Pinging API... $plate")
-            val ticker = ticker(5000)
-            repeat(5) {
-                Log.d("bbb", "PING")
-                ticker.receive()
-                _currentPlate.value = licensePlateRepository.getLicensePlate(plate)
+            kotlin.runCatching {
+                Log.d("bbb", "Pinging api with parameter: $plates")
+                val plates = licensePlateRepository.fetchPlates(plates)
+                Log.d("bbb", "Size: ${plates.size}")
+                delay(3000)
+                plates.forEach {
+                    if (it.detected) {
+                        Log.d("bbb", "Detected")
+                        _currentPlate.value = it
+                    }
+                    delay(10000)
+                }
+            }.onFailure {
+                Log.e("bbb", "Error: ${it.message}", it)
             }
         }
     }

@@ -1,17 +1,12 @@
 package com.example.surveillance.data.repository
 
-import com.example.surveillance.data.CityCode
 import com.example.surveillance.data.Plate
 import com.example.surveillance.data.remote.LicensePlateAPI
-import com.google.gson.Gson
+import com.example.surveillance.data.remote.response.PlateAPI
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 
 class LicensePlateRepository(private val licensePlateAPI: LicensePlateAPI) {
-
-    private val gson: Gson by lazy {
-        Gson()
-    }
 
     //TODO add fetching license plates
     suspend fun getLicensePlate(plate: String): Plate {
@@ -20,9 +15,11 @@ class LicensePlateRepository(private val licensePlateAPI: LicensePlateAPI) {
         }
     }
 
-    suspend fun getAllCityCodes(): List<CityCode> {
+    suspend fun fetchPlates(plate: String): PlateAPI {
         return withContext(IO) {
-            licensePlateAPI.fetchCityCodes()
+            licensePlateAPI.fetchPlates(plate)
         }
     }
+
+
 }

@@ -19,11 +19,15 @@ import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.observe
 import com.example.surveillance.R
 import com.example.surveillance.data.LicensePlate
-import com.example.surveillance.data.Plate
+import com.example.surveillance.data.remote.response.PlateAPIItem
 import com.example.surveillance.utils.MockData
 import kotlinx.android.synthetic.main.fragment_license_plate.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "SURVEILANCE_MAIN"
 private const val CHANNEL_NAME = "NotifName"
@@ -56,6 +60,8 @@ class LicensePlateFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
         bind()
+        val beeperControl = ApiPingger()
+        beeperControl.pingAPIForAnHour()
     }
 
     private fun bind() {
@@ -83,7 +89,6 @@ class LicensePlateFragment : Fragment() {
                         plate!!
                     )
                 )
-                plate?.let { licensePlateViewModel.testAPICall(it.filterNot { plate -> plate == '-' }) }
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -94,21 +99,21 @@ class LicensePlateFragment : Fragment() {
         }
     }
 
-    private fun setupNotification(plate: Plate) {
+    private fun setupNotification(plate: PlateAPIItem) {
         val notificationBuilder = NotificationCompat.Builder(requireContext(), "17")
         val intent = Intent(requireContext(), TestFragment::class.java)
         val pendingIntent = PendingIntent.getActivity(requireContext(), 0, intent, 0)
 
         val bigStyleText = NotificationCompat.BigTextStyle().bigText(
-            "Plate ${plate.RI1234AB} you requested was seen" +
+            "Plate ${plate.plate} you requested was seen" +
                     "${Date().time}"
         )
-            .setBigContentTitle("Plate ${plate.RI1234AB} was detected!")
+            .setBigContentTitle("Plate ${plate.plate} was detected!")
             .setSummaryText("Plate has been found")
 
         notificationBuilder.setContentIntent(pendingIntent)
             .setSmallIcon(R.drawable.ic_baseline_notifications_24)
-            .setContentTitle("Plate ${plate.RI1234AB} was detected!")
+            .setContentTitle("Plate ${plate.plate} was detected!")
             .setContentText("Plate found!")
             .setStyle(bigStyleText)
             .priority = Notification.PRIORITY_MAX
@@ -127,5 +132,18 @@ class LicensePlateFragment : Fragment() {
 
         notificationManager.notify(0, notificationBuilder.build())
 
+    }
+
+    inner class ApiPingger {
+        private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+        fun pingAPIForAnHour() {
+            val pinger = Runnable {
+                Log.d("bbb", "PING")
+                plate?.let { licensePlateViewModel.pingAPIwithGivenPlates(it.filterNot { plate -> plate == '-' }) }
+            }
+            val beeperHandle: ScheduledFuture<*> =
+                scheduler.scheduleAtFixedRate(pinger, 10, 10, TimeUnit.SECONDS)
+            scheduler.schedule(Runnable { beeperHandle.cancel(true) }, 60 * 60, TimeUnit.SECONDS)
+        }
     }
 }
