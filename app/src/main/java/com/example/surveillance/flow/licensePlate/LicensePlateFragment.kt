@@ -24,10 +24,6 @@ import com.example.surveillance.utils.MockData
 import kotlinx.android.synthetic.main.fragment_license_plate.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "SURVEILANCE_MAIN"
 private const val CHANNEL_NAME = "NotifName"
@@ -60,8 +56,6 @@ class LicensePlateFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
         bind()
-        val beeperControl = ApiPingger()
-        beeperControl.pingAPIForAnHour()
     }
 
     private fun bind() {
@@ -82,7 +76,6 @@ class LicensePlateFragment : Fragment() {
         }
 
         addLicensePlate.setOnClickListener {
-            Log.d("bbb", "Click")
             plate = "$code-${licensePlate.text}"
             if (regex.containsMatchIn(plate!!)) {
                 licensePlateAdapter.addNewLicensePlate(
@@ -90,6 +83,7 @@ class LicensePlateFragment : Fragment() {
                         plate!!
                     )
                 )
+                plate?.let { licensePlateViewModel.testAPICall(it.filterNot { plate -> plate == '-' }) }
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -133,18 +127,5 @@ class LicensePlateFragment : Fragment() {
 
         notificationManager.notify(0, notificationBuilder.build())
 
-    }
-
-    inner class ApiPingger {
-        private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-        fun pingAPIForAnHour() {
-            val pinger = Runnable {
-                Log.d("bbb", "PING")
-                plate?.let { licensePlateViewModel.pingAPI(it.filterNot { plate -> plate == '-' }) }
-            }
-            val beeperHandle: ScheduledFuture<*> =
-                scheduler.scheduleAtFixedRate(pinger, 10, 10, TimeUnit.SECONDS)
-            scheduler.schedule(Runnable { beeperHandle.cancel(true) }, 60 * 60, TimeUnit.SECONDS)
-        }
     }
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.surveillance.data.CityCode
 import com.example.surveillance.data.Plate
 import com.example.surveillance.data.repository.LicensePlateRepository
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.launch
 
 class LicensePlateViewModel(private val licensePlateRepository: LicensePlateRepository) :
@@ -23,8 +24,6 @@ class LicensePlateViewModel(private val licensePlateRepository: LicensePlateRepo
     init {
         viewModelScope.launch {
             try {
-//                val temp = licensePlateRepository.getLicensePlate("RI1234AB")
-//                Log.d("bbb", "Plate: $temp")
                 _cityCodes.value = licensePlateRepository.getAllCityCodes()
             } catch (e: Exception) {
                 Log.d("bbb", "error: ${e.message}")
@@ -32,14 +31,15 @@ class LicensePlateViewModel(private val licensePlateRepository: LicensePlateRepo
         }
     }
 
-    fun pingAPI(plate: String) {
+    fun testAPICall(plate: String) {
         viewModelScope.launch {
-            try {
+            Log.d("bbb", "Pinging API... $plate")
+            val ticker = ticker(5000)
+            repeat(5) {
+                Log.d("bbb", "PING")
+                ticker.receive()
                 _currentPlate.value = licensePlateRepository.getLicensePlate(plate)
-            } catch (e: Exception) {
-                Log.d("bbb", "Exception: ${e.message}")
             }
         }
     }
-
 }
