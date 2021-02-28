@@ -1,6 +1,7 @@
 package com.example.surveillance.data.repository
 
 import com.example.surveillance.data.CityCode
+import com.example.surveillance.data.Plate
 import com.example.surveillance.data.remote.LicensePlateAPI
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers.IO
@@ -13,9 +14,9 @@ class LicensePlateRepository(private val licensePlateAPI: LicensePlateAPI) {
     }
 
     //TODO add fetching license plates
-    suspend fun getLicensePlate() {
-        withContext(IO) {
-            licensePlateAPI.fetchLicesePlate()
+    suspend fun getLicensePlate(plate: String): Plate {
+        return withContext(IO) {
+            licensePlateAPI.fetchLicesePlate(plate)
         }
     }
 

@@ -1,12 +1,14 @@
 package com.example.surveillance.data.remote
 
 import com.example.surveillance.data.CityCode
+import com.example.surveillance.data.Plate
 import retrofit2.http.GET
+import retrofit2.http.Path
 
 interface LicensePlateAPI {
 
-    @GET("test/item")
-    suspend fun fetchLicesePlate()
+    @GET("check-licence-plate/{plate}/2020-12-01T18:45")
+    suspend fun fetchLicesePlate(@Path("plate") plate: String): Plate
 
     @GET("city-codes")
     suspend fun fetchCityCodes(): List<CityCode>

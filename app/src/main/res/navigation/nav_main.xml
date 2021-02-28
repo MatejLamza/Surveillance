@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_main"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
     app:startDestination="@id/licensePlateFragment">
 
     <fragment
         android:id="@+id/licensePlateFragment"
         android:name="com.example.surveillance.flow.licensePlate.LicensePlateFragment"
-        android:label="LicensePlateFragment" />
+        android:label="LicensePlateFragment">
+        <action
+            android:id="@+id/action_licensePlateFragment_to_notificationFragment"
+            app:destination="@id/notificationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/notificationFragment"
+        android:name="com.example.surveillance.flow.licensePlate.NotificationFragment"
+        android:label="NotificationFragment" />
 </navigation>
