@@ -1,19 +1,29 @@
 package com.example.surveillance.flow.licensePlate
 
+import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.observe
 import com.example.surveillance.R
 import com.example.surveillance.data.LicensePlate
+import com.example.surveillance.data.Plate
 import com.example.surveillance.utils.MockData
 import kotlinx.android.synthetic.main.fragment_license_plate.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -55,8 +65,9 @@ class LicensePlateFragment : Fragment() {
     }
 
     private fun bind() {
-        licensePlateViewModel.currentPlate.observe(viewLifecycleOwner) {
+        licensePlateViewModel.currentPlate.distinctUntilChanged().observe(viewLifecycleOwner) {
             Log.d("bbb", "Notifikacija: $it")
+            setupNotification(plate = it)
         }
     }
 
@@ -87,6 +98,41 @@ class LicensePlateFragment : Fragment() {
                 ).show()
             }
         }
+    }
+
+    private fun setupNotification(plate: Plate) {
+        val notificationBuilder = NotificationCompat.Builder(requireContext(), "17")
+        val intent = Intent(requireContext(), TestFragment::class.java)
+        val pendingIntent = PendingIntent.getActivity(requireContext(), 0, intent, 0)
+
+        val bigStyleText = NotificationCompat.BigTextStyle().bigText(
+            "Plate ${plate.RI1234AB} you requested was seen" +
+                    "${Date().time}"
+        )
+            .setBigContentTitle("Plate ${plate.RI1234AB} was detected!")
+            .setSummaryText("Plate has been found")
+
+        notificationBuilder.setContentIntent(pendingIntent)
+            .setSmallIcon(R.drawable.ic_baseline_notifications_24)
+            .setContentTitle("Plate ${plate.RI1234AB} was detected!")
+            .setContentText("Plate found!")
+            .setStyle(bigStyleText)
+            .priority = Notification.PRIORITY_MAX
+
+        notificationManager =
+            requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelID = "17"
+            val notificationChannel =
+                NotificationChannel(channelID, "ChannelNotify", NotificationManager.IMPORTANCE_HIGH)
+            notificationManager.createNotificationChannel(notificationChannel)
+
+            notificationBuilder.setChannelId(channelID)
+        }
+
+        notificationManager.notify(0, notificationBuilder.build())
+
     }
 
     inner class ApiPingger {
