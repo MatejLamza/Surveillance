@@ -22,11 +22,10 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".utils.ApiManager"
-            android:enabled="true"
-            android:exported="true" />
+            android:name=".utils.MyBroadcast"
+            android:enabled="true" />
         <service
-            android:name=".utils.ApiService"
+            android:name=".utils.MyService"
             android:enabled="true"
             android:process=":your_service" />
     </application>

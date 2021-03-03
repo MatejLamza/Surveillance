@@ -21,5 +21,4 @@ class LicensePlateRepository(private val licensePlateAPI: LicensePlateAPI) {
         }
     }
 
-
 }

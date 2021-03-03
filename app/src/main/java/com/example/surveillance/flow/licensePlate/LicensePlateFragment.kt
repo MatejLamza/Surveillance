@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -17,17 +18,16 @@ import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.observe
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.surveillance.R
 import com.example.surveillance.data.LicensePlate
 import com.example.surveillance.data.remote.response.PlateAPIItem
 import com.example.surveillance.utils.MockData
+import com.example.surveillance.utils.MyBroadcast
+import com.example.surveillance.utils.MyService
 import kotlinx.android.synthetic.main.fragment_license_plate.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "SURVEILANCE_MAIN"
 private const val CHANNEL_NAME = "NotifName"
@@ -46,7 +46,10 @@ class LicensePlateFragment : Fragment() {
     private val regex = Regex("^[A-Z]{2}-[0-9]{3,4}-[A-Z]{1,2}\$")
     private var plate: String? = null
 
+    private var plates: MutableList<String> = mutableListOf()
+
     private lateinit var notificationManager: NotificationManager
+    private var myBroadcastReceiver: MyBroadcast? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,12 +59,31 @@ class LicensePlateFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_license_plate, container, false)
     }
 
+    override fun onResume() {
+        myBroadcastReceiver = MyBroadcast()
+        val intentFilter = IntentFilter("PlateIntent")
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(myBroadcastReceiver!!, intentFilter)
+        super.onResume()
+    }
+
+    override fun onPause() {
+        if (myBroadcastReceiver != null) {
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(
+                myBroadcastReceiver!!
+            )
+        }
+        myBroadcastReceiver = null
+        super.onPause()
+
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
         bind()
-        val beeperControl = ApiPingger()
-        beeperControl.pingAPIForAnHour()
+//        val beeperControl = ApiPingger()
+//        beeperControl.pingAPIForAnHour()
     }
 
     private fun bind() {
@@ -84,11 +106,10 @@ class LicensePlateFragment : Fragment() {
         addLicensePlate.setOnClickListener {
             plate = "$code-${licensePlate.text}"
             if (regex.containsMatchIn(plate!!)) {
-                licensePlateAdapter.addNewLicensePlate(
-                    LicensePlate(
-                        plate!!
-                    )
-                )
+                licensePlateAdapter.addNewLicensePlate(LicensePlate(plate!!))
+                plates = licensePlateAdapter.licensePlates.map {
+                    it.licensePlateNumber
+                } as MutableList<String>
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -96,6 +117,12 @@ class LicensePlateFragment : Fragment() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+
+        startBtn.setOnClickListener {
+            val intent = Intent(requireContext(), MyService::class.java)
+            intent.putExtra("KEY", plates.joinToString(","))
+            requireActivity().startService(intent)
         }
     }
 
@@ -132,18 +159,5 @@ class LicensePlateFragment : Fragment() {
 
         notificationManager.notify(0, notificationBuilder.build())
 
-    }
-
-    inner class ApiPingger {
-        private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-        fun pingAPIForAnHour() {
-            val pinger = Runnable {
-                Log.d("bbb", "PING")
-                plate?.let { licensePlateViewModel.pingAPIwithGivenPlates(it.filterNot { plate -> plate == '-' }) }
-            }
-            val beeperHandle: ScheduledFuture<*> =
-                scheduler.scheduleAtFixedRate(pinger, 10, 10, TimeUnit.SECONDS)
-            scheduler.schedule(Runnable { beeperHandle.cancel(true) }, 60 * 60, TimeUnit.SECONDS)
-        }
     }
 }
